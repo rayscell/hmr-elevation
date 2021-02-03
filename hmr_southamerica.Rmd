@@ -1,0 +1,202 @@
+---
+title: "HIGH MOUNTAIN REGION IN SOUTH AMERICA"
+author: "Ridwan"
+date: "2021 M02 4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Data visualization: Altitudinal shif in climatically suitable ar --------
+### Prepared: Ridwan Adeyemi Shittu
+#### Master Thesis
+
+##### Analysis of Elevation gradient for SAmerica(HMR) #########################
+
+
+
+```{r}
+rm(list = ls())  #### Remove all unwanted files in the environment
+setwd("C:/thesisR/R_new")
+library(raster)
+library(rgdal)
+library(geosphere)
+library(ggpubr)
+library(tidyverse)
+library(ggforce) #for  sending difference face to new plot
+### please run the first file analysis and graphs_ele before this files#########
+# load("C:/thesisR/R_new/analysAndGraph_ele.RData") #load the previous file Analysis and graph ele
+
+source('C:/thesisR/R_new/sort_def_function.R', echo=FALSE)
+load("C:/thesisR/R_new/Cleaned_model_Ouputs_analysis.RData")
+# Calculate the area of suitable regions for Dengue transmission in SAmerica HMR for current and future scenarios --------
+##mark system time
+
+```
+
+
+```{r }
+#area for the shapefiles SAmerica(HMR)
+soa_hmr_a <- areaPolygon(soa_hmr)
+print(soa_hmr_a/1000000)
+
+#make a copy of crop binary raster
+soahmr_bs_a <- soahmr_bs
+# set the coordinate reference systemsystem
+crs(soahmr_bs_a) <- proj.WGS84
+#get sizes of all cells in raster [km2]
+soahmr_bs_cellsize <- area(soahmr_bs_a, na.rm=TRUE, weights=FALSE)
+# plot(soahmr_bs)
+#delete NAs from vector of all raster cells ##NAs lie outside of the rastered region, can thus be omitted
+soahmr_bs_cellsize <- soahmr_bs_cellsize[!is.na(soahmr_bs_cellsize)]
+
+#compute area [km2] of all cells in soahmr_bs_area
+soahmr_bs_area<-length(soahmr_bs_cellsize)*median(soahmr_bs_cellsize)
+# Print area of the SAmerica(HMR) containing both the suitable and unsuitable regions to confirm the area of SAmerica(HMR) is correct
+
+print(paste("Area of SAmerica(HMR) raster baseline:", round(soahmr_bs_area, digits = 1), "Km2"))
+
+##plot the area computed
+# graphics.off()
+# x11(width = 8, height = 5)
+# plot(soahmr_bs_a, main = "Area of SAmerica(HMR) Baseline Model") ### get a levelplot function
+# plot(soa_hmr, add=TRUE)
+
+
+```
+
+```{r}
+# Calculate and Visualize Current suitable area at risk of dengue  --------
+soahmr_bs_suit_a <- soahmr_bs
+crs(soahmr_bs_suit_a) <- proj.WGS84
+soahmr_bs_suit_a[soahmr_bs_suit_a==0] <- NA # since our raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_bs_suit_a)
+# compute area [km2] of SAmerica(HMR)'s current suitable cells for dengue transmission
+soahmr_bs_suit_cellsize <- area(soahmr_bs_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_bs_suit_cellsize <- soahmr_bs_suit_cellsize[!is.na(soahmr_bs_suit_cellsize)]
+soahmr_bs_suit_area<- length(soahmr_bs_suit_cellsize)*median(soahmr_bs_suit_cellsize)
+# Print area of the SAmerica(HMR)'s current suitable region at right of dengue
+print(paste("Area of SAmerica(HMR)'s current suitable regions for dengue tranmission:", round(soahmr_bs_suit_area, digits = 1), "Km2"))
+
+soahmr_bs_unsuit_area <- soahmr_bs_area - soahmr_bs_suit_area
+print(paste("Area of SAmerica(HMR)'s current unsuitable regions for dengue tranmission:", round(soahmr_bs_unsuit_area, digits = 1), "Km2"))
+print(paste("percentage of SAmerica(HMR) Land current suitable for dengue transmission:", round((soahmr_bs_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+
+
+
+```
+
+```{r}
+# Calculate and Visualize future scenario RCP4.5 year 2030 (soahmr_) suitable area at risk of dengue  --------
+soahmr_rcp4530_suit_a <- soahmr_rcp4530
+crs(soahmr_rcp4530_suit_a) <- proj.WGS84
+soahmr_rcp4530_suit_a[soahmr_rcp4530_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp4530_suit_a)
+# compute area [km2] of SAmerica(HMR)'s future scenario RCP4.5 year 2030 cells for dengue transmission
+soahmr_rcp4530_suit_cellsize <- area(soahmr_rcp4530_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp4530_suit_cellsize <- soahmr_rcp4530_suit_cellsize[!is.na(soahmr_rcp4530_suit_cellsize)]
+soahmr_rcp4530_suit_area<- length(soahmr_rcp4530_suit_cellsize)*median(soahmr_rcp4530_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP4.5 year 2030 region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2030  suitable  for dengue tranmission:", round(soahmr_rcp4530_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp4530_unsuit_area <- soahmr_bs_area -soahmr_rcp4530_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2030 unsuitable  for dengue tranmission:", round(soahmr_rcp4530_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP4.5 year 2030 suitable for dengue transmission:", round((soahmr_rcp4530_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+
+# Calculate and Visualize future scenario RCP4.5 year 2050 (soahmr_) suitable area at risk of dengue  --------
+
+soahmr_rcp4550_suit_a <- soahmr_rcp4550
+crs(soahmr_rcp4550_suit_a) <- proj.WGS84
+soahmr_rcp4550_suit_a[soahmr_rcp4550_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp4550_suit_a)
+# compute area [km2] of SAmerica(HMR)'s future scenario RCP4.5 year 2050 cells for dengue transmission
+soahmr_rcp4550_suit_cellsize <- area(soahmr_rcp4550_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp4550_suit_cellsize <- soahmr_rcp4550_suit_cellsize[!is.na(soahmr_rcp4550_suit_cellsize)]
+soahmr_rcp4550_suit_area<- length(soahmr_rcp4550_suit_cellsize)*median(soahmr_rcp4550_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP4.5 year 2050 region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2050  suitable  for dengue tranmission:", round(soahmr_rcp4550_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp4550_unsuit_area <- soahmr_bs_area -soahmr_rcp4550_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2050 unsuitable  for dengue tranmission:", round(soahmr_rcp4550_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP4.5 year 2050 suitable for dengue transmission:", round((soahmr_rcp4550_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+
+
+
+# Calculate and Visualize future scenario RCP4.5 year 2070 (soahmr_) suitable area at risk of dengue  --------
+
+soahmr_rcp4570_suit_a <- soahmr_rcp4570
+crs(soahmr_rcp4570_suit_a) <- proj.WGS84
+soahmr_rcp4570_suit_a[soahmr_rcp4570_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp4570_suit_a)
+# compute area [km2] of SAmerica(HMR)'s future scenario RCP4.5 year 2070 cells for dengue transmission
+soahmr_rcp4570_suit_cellsize <- area(soahmr_rcp4570_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp4570_suit_cellsize <- soahmr_rcp4570_suit_cellsize[!is.na(soahmr_rcp4570_suit_cellsize)]
+soahmr_rcp4570_suit_area<- length(soahmr_rcp4570_suit_cellsize)*median(soahmr_rcp4570_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP4.5 year 2070 region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2070  suitable  for dengue tranmission:", round(soahmr_rcp4570_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp4570_unsuit_area <- soahmr_bs_area -soahmr_rcp4570_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP4.5 year 2070 unsuitable  for dengue tranmission:", round(soahmr_rcp4570_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP4.5 year 2070 suitable for dengue transmission:", round((soahmr_rcp4570_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+```
+
+```{r}
+# Calculate and Visualize future scenario RCP8.5 year 2030 (soahmr_) suitable area at risk of dengue  --------
+
+soahmr_rcp8530_suit_a <- soahmr_rcp8530
+crs(soahmr_rcp8530_suit_a) <- proj.WGS84
+soahmr_rcp8530_suit_a[soahmr_rcp8530_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp8530_suit_a)
+
+soahmr_rcp8530_suit_cellsize <- area(soahmr_rcp8530_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp8530_suit_cellsize <- soahmr_rcp8530_suit_cellsize[!is.na(soahmr_rcp8530_suit_cellsize)]
+soahmr_rcp8530_suit_area<- length(soahmr_rcp8530_suit_cellsize)*median(soahmr_rcp8530_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP8.5 year 2030 region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2030  suitable  for dengue tranmission:", round(soahmr_rcp8530_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp8530_unsuit_area <- soahmr_bs_area -soahmr_rcp8530_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2030 unsuitable  for dengue tranmission:", round(soahmr_rcp8530_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP8.5 year 2030 suitable for dengue transmission:", round((soahmr_rcp8530_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+
+# Calculate and Visualize future scenario RCP8.5 year 2050 suitable area at risk of dengue  --------
+
+soahmr_rcp8550_suit_a <- soahmr_rcp8550
+crs(soahmr_rcp8550_suit_a) <- proj.WGS84
+soahmr_rcp8550_suit_a[soahmr_rcp8550_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp8550_suit_a)
+# compute area [km2] of SAmerica(HMR)'s future scenario RCP8.5 year 2050  cells for dengue transmission
+soahmr_rcp8550_suit_cellsize <- area(soahmr_rcp8550_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp8550_suit_cellsize <- soahmr_rcp8550_suit_cellsize[!is.na(soahmr_rcp8550_suit_cellsize)]
+soahmr_rcp8550_suit_area<- length(soahmr_rcp8550_suit_cellsize)*median(soahmr_rcp8550_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP8.5 year 2050  region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2050  suitable  for dengue tranmission:", round(soahmr_rcp8550_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp8550_unsuit_area <- soahmr_bs_area -soahmr_rcp8550_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2050 unsuitable  for dengue tranmission:", round(soahmr_rcp8550_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP8.5 year 2050 suitable for dengue transmission:", round((soahmr_rcp8550_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+
+# Calculate and Visualize future scenario RCP8.5 year 2070 (soahmr_) suitable area at risk of dengue  --------
+
+soahmr_rcp8570_suit_a <- soahmr_rcp8570
+crs(soahmr_rcp8570_suit_a) <- proj.WGS84
+soahmr_rcp8570_suit_a[soahmr_rcp8570_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(soahmr_rcp8570_suit_a)
+# compute area [km2] of SAmerica(HMR)'s future scenario RCP8.5 year 2070 cells for dengue transmission
+soahmr_rcp8570_suit_cellsize <- area(soahmr_rcp8570_suit_a, na.rm=TRUE, weights=FALSE)
+soahmr_rcp8570_suit_cellsize <- soahmr_rcp8570_suit_cellsize[!is.na(soahmr_rcp8570_suit_cellsize)]
+soahmr_rcp8570_suit_area<- length(soahmr_rcp8570_suit_cellsize)*median(soahmr_rcp8570_suit_cellsize)
+# Print area of the SAmerica(HMR)'s future scenario RCP8.5 year 2070 region at right of dengue
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2070  suitable  for dengue tranmission:", round(soahmr_rcp8570_suit_area, digits = 1), "Km2"))
+
+soahmr_rcp8570_unsuit_area <- soahmr_bs_area -soahmr_rcp8570_suit_area
+print(paste("Area of SAmerica(HMR)'s future scenario RCP8.5 year 2070 unsuitable  for dengue tranmission:", round(soahmr_rcp8570_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of SAmerica(HMR) future scenario RCP8.5 year 2070 suitable for dengue transmission:", round((soahmr_rcp8570_suit_area/soahmr_bs_area)*100,digits = 1), "%" ))
+```
+
