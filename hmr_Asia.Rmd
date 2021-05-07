@@ -1,0 +1,446 @@
+---
+title: "HIGH MOUNTAIN REGION IN Asia"
+author: "Ridwan"
+date: "2021 M02 4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Data visualization: Altitudinal shift of climatically suitable area at risk of dengue transmission in the high mountain regions.
+### Prepared: Ridwan Adeyemi Shittu
+#### Master Thesis
+
+```{r, echo=FALSE, include=TRUE}
+rm(list = ls())  #### Remove all unwanted files in the environment
+setwd("C:/thesisR/R_new")
+library(raster)
+library(rgdal)
+library(rgeos)
+library(geosphere)
+library(ggpubr)
+library(tidyverse)
+library(dplyr)
+library(ggforce) #for  sending difference face to new plot
+
+```
+
+### NB: Please run the first file analysis and graphs_ele before this files or Load the saved Rdata file for the script.
+```{r, echo=FALSE}
+
+# load("C:/thesisR/R_new/analysAndGraph_ele.RData") #load the previous file Analysis and graph ele
+
+source("C:/thesisR/R_new/sort_def_function.R", echo=FALSE)
+load("C:/thesisR/R_new/Cleaned_model_Ouputs_analysis.RData")
+
+```
+
+# Area analysis of suitable regions for Dengue transmission in South America HMR for current and future scenarios
+
+## Area of Asia HMR
+```{r }
+#area for the shapefiles Asia(HMR)
+asi_hmr_a <- areaPolygon(asi_hmr)
+
+#print(asi_hmr_a/1000000)
+
+#make a copy of crop binary raster
+asihmr_bs_a <- asihmr_bs
+# set the coordinate reference systemsystem
+crs(asihmr_bs_a) <- proj.WGS84
+#get sizes of all cells in raster [km2]
+asihmr_bs_cellsize <- area(asihmr_bs_a, na.rm=TRUE, weights=FALSE)
+# plot(asihmr_bs)
+#delete NAs from vector of all raster cells ##NAs lie outside of the rastered region, can thus be omitted
+asihmr_bs_cellsize <- asihmr_bs_cellsize[!is.na(asihmr_bs_cellsize)]
+
+#compute area [km2] of all cells in asihmr_bs_area
+asihmr_bs_area<-length(asihmr_bs_cellsize)*median(asihmr_bs_cellsize)
+# Print area of the Asia(HMR) containing both the suitable and unsuitable regions to confirm the area of Asia(HMR) is correct
+
+print(paste("Area of Asia(HMR) raster baseline:", round(asihmr_bs_area, digits = 1), "Km2"))
+
+
+##plot the area computed
+# graphics.off()
+# x11(width = 8, height = 5)
+# plot(asihmr_bs_a, main = "Area of Asia(HMR) Baseline Model") ### get a levelplot function
+# plot(asi_hmr, add=TRUE)
+```
+
+## Current suitable area at risk of dengue
+```{r}
+
+asihmr_bs_suit_a <- asihmr_bs
+crs(asihmr_bs_suit_a) <- proj.WGS84
+asihmr_bs_suit_a[asihmr_bs_suit_a==0] <- NA # since our raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_bs_suit_a)
+# compute area [km2] of Asia(HMR)'s current suitable cells for dengue transmission
+asihmr_bs_suit_cellsize <- area(asihmr_bs_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_bs_suit_cellsize <- asihmr_bs_suit_cellsize[!is.na(asihmr_bs_suit_cellsize)]
+asihmr_bs_suit_area<- length(asihmr_bs_suit_cellsize)*median(asihmr_bs_suit_cellsize)
+# Print area of the Asia(HMR)'s current suitable region at right of dengue
+print(paste("Area of Asia(HMR)'s current suitable regions for dengue tranmission:", round(asihmr_bs_suit_area, digits = 1), "Km2"))
+
+asihmr_bs_unsuit_area <- asihmr_bs_area - asihmr_bs_suit_area
+print(paste("Area of Asia(HMR)'s current unsuitable regions for dengue tranmission:", round(asihmr_bs_unsuit_area, digits = 1), "Km2"))
+print(paste("percentage of Asia(HMR) Land current suitable for dengue transmission:", round((asihmr_bs_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+
+
+```
+## Future scenario RCP 4.5 
+### Year 2030 
+```{r}
+#year 2030 
+
+asihmr_rcp4530_suit_a <- asihmr_rcp4530
+crs(asihmr_rcp4530_suit_a) <- proj.WGS84
+asihmr_rcp4530_suit_a[asihmr_rcp4530_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp4530_suit_a)
+# compute area [km2] of Asia(HMR)'s future scenario RCP4.5 year 2030 cells for dengue transmission
+asihmr_rcp4530_suit_cellsize <- area(asihmr_rcp4530_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp4530_suit_cellsize <- asihmr_rcp4530_suit_cellsize[!is.na(asihmr_rcp4530_suit_cellsize)]
+asihmr_rcp4530_suit_area<- length(asihmr_rcp4530_suit_cellsize)*median(asihmr_rcp4530_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP4.5 year 2030 region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2030  suitable  for dengue tranmission:", round(asihmr_rcp4530_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp4530_unsuit_area <- asihmr_bs_area -asihmr_rcp4530_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2030 unsuitable  for dengue tranmission:", round(asihmr_rcp4530_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP4.5 year 2030 suitable for dengue transmission:", round((asihmr_rcp4530_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+```
+
+### Year 2050
+```{r}
+
+# year 2050
+
+asihmr_rcp4550_suit_a <- asihmr_rcp4550
+crs(asihmr_rcp4550_suit_a) <- proj.WGS84
+asihmr_rcp4550_suit_a[asihmr_rcp4550_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp4550_suit_a)
+# compute area [km2] of Asia(HMR)'s future scenario RCP4.5 year 2050 cells for dengue transmission
+asihmr_rcp4550_suit_cellsize <- area(asihmr_rcp4550_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp4550_suit_cellsize <- asihmr_rcp4550_suit_cellsize[!is.na(asihmr_rcp4550_suit_cellsize)]
+asihmr_rcp4550_suit_area<- length(asihmr_rcp4550_suit_cellsize)*median(asihmr_rcp4550_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP4.5 year 2050 region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2050  suitable  for dengue tranmission:", round(asihmr_rcp4550_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp4550_unsuit_area <- asihmr_bs_area -asihmr_rcp4550_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2050 unsuitable  for dengue tranmission:", round(asihmr_rcp4550_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP4.5 year 2050 suitable for dengue transmission:", round((asihmr_rcp4550_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+```
+
+
+### Year 2070
+```{r}
+# year 2070
+asihmr_rcp4570_suit_a <- asihmr_rcp4570
+crs(asihmr_rcp4570_suit_a) <- proj.WGS84
+asihmr_rcp4570_suit_a[asihmr_rcp4570_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp4570_suit_a)
+# compute area [km2] of Asia(HMR)'s future scenario RCP4.5 year 2070 cells for dengue transmission
+asihmr_rcp4570_suit_cellsize <- area(asihmr_rcp4570_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp4570_suit_cellsize <- asihmr_rcp4570_suit_cellsize[!is.na(asihmr_rcp4570_suit_cellsize)]
+asihmr_rcp4570_suit_area<- length(asihmr_rcp4570_suit_cellsize)*median(asihmr_rcp4570_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP4.5 year 2070 region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2070  suitable  for dengue tranmission:", round(asihmr_rcp4570_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp4570_unsuit_area <- asihmr_bs_area -asihmr_rcp4570_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP4.5 year 2070 unsuitable  for dengue tranmission:", round(asihmr_rcp4570_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP4.5 year 2070 suitable for dengue transmission:", round((asihmr_rcp4570_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+```
+## Future scenario RCP 8.5 
+### Year 2030 
+```{r}
+#year 2030 
+asihmr_rcp8530_suit_a <- asihmr_rcp8530
+crs(asihmr_rcp8530_suit_a) <- proj.WGS84
+asihmr_rcp8530_suit_a[asihmr_rcp8530_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp8530_suit_a)
+
+asihmr_rcp8530_suit_cellsize <- area(asihmr_rcp8530_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp8530_suit_cellsize <- asihmr_rcp8530_suit_cellsize[!is.na(asihmr_rcp8530_suit_cellsize)]
+asihmr_rcp8530_suit_area<- length(asihmr_rcp8530_suit_cellsize)*median(asihmr_rcp8530_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP8.5 year 2030 region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2030  suitable  for dengue tranmission:", round(asihmr_rcp8530_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp8530_unsuit_area <- asihmr_bs_area -asihmr_rcp8530_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2030 unsuitable  for dengue tranmission:", round(asihmr_rcp8530_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP8.5 year 2030 suitable for dengue transmission:", round((asihmr_rcp8530_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+
+```
+
+### Year 2050
+```{r}
+
+# year 2050
+asihmr_rcp8550_suit_a <- asihmr_rcp8550
+crs(asihmr_rcp8550_suit_a) <- proj.WGS84
+asihmr_rcp8550_suit_a[asihmr_rcp8550_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp8550_suit_a)
+# compute area [km2] of Asia(HMR)'s future scenario RCP8.5 year 2050  cells for dengue transmission
+asihmr_rcp8550_suit_cellsize <- area(asihmr_rcp8550_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp8550_suit_cellsize <- asihmr_rcp8550_suit_cellsize[!is.na(asihmr_rcp8550_suit_cellsize)]
+asihmr_rcp8550_suit_area<- length(asihmr_rcp8550_suit_cellsize)*median(asihmr_rcp8550_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP8.5 year 2050  region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2050  suitable  for dengue tranmission:", round(asihmr_rcp8550_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp8550_unsuit_area <- asihmr_bs_area -asihmr_rcp8550_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2050 unsuitable  for dengue tranmission:", round(asihmr_rcp8550_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP8.5 year 2050 suitable for dengue transmission:", round((asihmr_rcp8550_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+
+```
+
+
+### Year 2070
+```{r}
+# year 2070
+asihmr_rcp8570_suit_a <- asihmr_rcp8570
+crs(asihmr_rcp8570_suit_a) <- proj.WGS84
+asihmr_rcp8570_suit_a[asihmr_rcp8570_suit_a==0] <- NA # raster is categorical i.e 0 for unsuitable and 1 for suitable. Set the value of unsuitable to zero to get only the suitable areas out
+# plot(asihmr_rcp8570_suit_a)
+# compute area [km2] of Asia(HMR)'s future scenario RCP8.5 year 2070 cells for dengue transmission
+asihmr_rcp8570_suit_cellsize <- area(asihmr_rcp8570_suit_a, na.rm=TRUE, weights=FALSE)
+asihmr_rcp8570_suit_cellsize <- asihmr_rcp8570_suit_cellsize[!is.na(asihmr_rcp8570_suit_cellsize)]
+asihmr_rcp8570_suit_area<- length(asihmr_rcp8570_suit_cellsize)*median(asihmr_rcp8570_suit_cellsize)
+# Print area of the Asia(HMR)'s future scenario RCP8.5 year 2070 region at right of dengue
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2070  suitable  for dengue tranmission:", round(asihmr_rcp8570_suit_area, digits = 1), "Km2"))
+
+asihmr_rcp8570_unsuit_area <- asihmr_bs_area -asihmr_rcp8570_suit_area
+print(paste("Area of Asia(HMR)'s future scenario RCP8.5 year 2070 unsuitable  for dengue tranmission:", round(asihmr_rcp8570_unsuit_area, digits = 1), "Km2"))
+
+print(paste("Percentage of Asia(HMR) future scenario RCP8.5 year 2070 suitable for dengue transmission:", round((asihmr_rcp8570_suit_area/asihmr_bs_area)*100,digits = 1), "%" ))
+
+```
+
+
+# Elevation gradient analysis of Area of HMR suitable for dengue transmission.
+
+
+
+### Current
+```{r}
+## baseline
+asihmr_bs_suit_sps <- asihmr_bs_suit
+asihmr_bs_suit_sps
+asihmr_bs_suit_sps_xy <- as.data.frame(asihmr_bs_suit_sps, xy = T) %>% drop_na() #conver the raster to dataframe and remove NAs 
+
+# View(asihmr_bs_suit_sps_xy)
+asihmr_bs_suit_pt <- SpatialPoints(asihmr_bs_suit_sps_xy[1:2], proj4string = crs(asihmr_bs_suit_sps))
+#plot(asihmr_bs_suit_pt)
+asihmr_bs_suit_sps_elv <- raster::extract(eleva, asihmr_bs_suit_pt)
+#View(asihmr_bs_suit_sps_elv)
+hist(asihmr_bs_suit_sps_elv)
+asihmr_bs_suit_sps_elv <- round(asihmr_bs_suit_sps_elv)
+asihmr_bs_suit_sps_elv_df <- table(asihmr_bs_suit_sps_elv)
+asihmr_bs_suit_sps_elv_df<- as.data.frame(asihmr_bs_suit_sps_elv_df)
+```
+
+## Future scenario RCP 4.5 
+
+### Year 2030
+```{r}
+asihmr_rcp4530_suit_sps <- asihmr_rcp4530_suit
+# plot(asihmr_rcp4530_suit)
+asihmr_rcp4530_suit_sps
+asihmr_rcp4530_suit_sps_xy <- as.data.frame(asihmr_rcp4530_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp4530_suit_sps_xy<- na.omit(asihmr_rcp4530_suit_sps_xy)
+#View(asihmr_rcp4530_suit_sps_xy)
+asihmr_rcp4530_suit_pt <- SpatialPoints(asihmr_rcp4530_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp4530_suit_sps))
+# plot(asihmr_rcp4530_suit_pt)
+asihmr_rcp4530_suit_sps_elv <- raster::extract(eleva, asihmr_rcp4530_suit_pt)
+#View(asihmr_rcp4530_suit_sps_elv)
+asihmr_rcp4530_suit_sps_elv <- round(asihmr_rcp4530_suit_sps_elv)
+asihmr_rcp4530_suit_sps_elv_df <- table(asihmr_rcp4530_suit_sps_elv) %>%  as.data.frame()
+# asihmr_rcp4530_suit_sps_elv_df<- as.data.frame(asihmr_rcp4530_suit_sps_elv_df)
+#View(asihmr_rcp4530_suit_sps_elv_df)
+
+
+```
+
+### Year 2050
+```{r}
+asihmr_rcp4550_suit_sps <- asihmr_rcp4550_suit
+# plot(asihmr_rcp4550_suit)
+asihmr_rcp4550_suit_sps
+asihmr_rcp4550_suit_sps_xy <- as.data.frame(asihmr_rcp4550_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp4550_suit_sps_xy<- na.omit(asihmr_rcp4550_suit_sps_xy)
+#View(asihmr_rcp4550_suit_sps_xy)
+asihmr_rcp4550_suit_pt <- SpatialPoints(asihmr_rcp4550_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp4550_suit_sps))
+# plot(asihmr_rcp4550_suit_pt)
+asihmr_rcp4550_suit_sps_elv <- raster::extract(eleva, asihmr_rcp4550_suit_pt)
+#View(asihmr_rcp4550_suit_sps_elv)
+hist(asihmr_rcp4550_suit_sps_elv )
+asihmr_rcp4550_suit_sps_elv <- round(asihmr_rcp4550_suit_sps_elv)
+asihmr_rcp4550_suit_sps_elv_df <- table(asihmr_rcp4550_suit_sps_elv) %>% as.data.frame()
+# asihmr_rcp4550_suit_sps_elv_df<- as.data.frame(asihmr_rcp4550_suit_sps_elv_df)
+
+```
+
+### Year 2070
+
+```{r}
+asihmr_rcp4570_suit_sps <- asihmr_rcp4570_suit
+# plot(asihmr_rcp4570_suit)
+asihmr_rcp4570_suit_sps
+asihmr_rcp4570_suit_sps_xy <- as.data.frame(asihmr_rcp4570_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp4570_suit_sps_xy<- na.omit(asihmr_rcp4570_suit_sps_xy)
+#View(asihmr_rcp4570_suit_sps_xy)
+asihmr_rcp4570_suit_pt <- SpatialPoints(asihmr_rcp4570_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp4570_suit_sps))
+# plot(asihmr_rcp4570_suit_pt)
+asihmr_rcp4570_suit_sps_elv <- raster::extract(eleva, asihmr_rcp4570_suit_pt)
+hist(asihmr_rcp4570_suit_sps_elv)
+#View(asihmr_rcp4570_suit_sps_elv)
+asihmr_rcp4570_suit_sps_elv <- round(asihmr_rcp4570_suit_sps_elv)
+asihmr_rcp4570_suit_sps_elv_df <- table(asihmr_rcp4570_suit_sps_elv) %>% as.data.frame()
+# asihmr_rcp4570_suit_sps_elv_df<- as.data.frame(asihmr_rcp4570_suit_sps_elv_df)
+
+```
+
+## Future scenario RCP 8.5 
+
+### Year 2030
+```{r}
+asihmr_rcp8530_suit_sps <- asihmr_rcp8530_suit
+# plot(asihmr_rcp8530_suit)
+asihmr_rcp8530_suit_sps
+asihmr_rcp8530_suit_sps_xy <- as.data.frame(asihmr_rcp8530_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp8530_suit_sps_xy<- na.omit(asihmr_rcp8530_suit_sps_xy)
+#View(asihmr_rcp8530_suit_sps_xy)
+asihmr_rcp8530_suit_pt <- SpatialPoints(asihmr_rcp8530_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp8530_suit_sps))
+# plot(asihmr_rcp8530_suit_pt)
+asihmr_rcp8530_suit_sps_elv <- raster::extract(eleva, asihmr_rcp8530_suit_pt)
+#View(asihmr_rcp8530_suit_sps_elv)
+asihmr_rcp8530_suit_sps_elv <- round(asihmr_rcp8530_suit_sps_elv)
+asihmr_rcp8530_suit_sps_elv_df <- table(asihmr_rcp8530_suit_sps_elv) %>% as.data.frame()
+# asihmr_rcp8530_suit_sps_elv_df<- as.data.frame(asihmr_rcp8530_suit_sps_elv_df)
+# View(asihmr_rcp8530_suit_sps_elv_df)
+```
+
+## Year 2050
+```{r}
+asihmr_rcp8550_suit_sps <- asihmr_rcp8550_suit
+# plot(asihmr_rcp8550_suit)
+asihmr_rcp8550_suit_sps
+asihmr_rcp8550_suit_sps_xy <- as.data.frame(asihmr_rcp8550_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp8550_suit_sps_xy<- na.omit(asihmr_rcp8550_suit_sps_xy)
+#View(asihmr_rcp8550_suit_sps_xy)
+asihmr_rcp8550_suit_pt <- SpatialPoints(asihmr_rcp8550_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp8550_suit_sps))
+# plot(asihmr_rcp8550_suit_pt)
+asihmr_rcp8550_suit_sps_elv <- raster::extract(eleva, asihmr_rcp8550_suit_pt)
+#View(asihmr_rcp8550_suit_sps_elv)
+hist(asihmr_rcp8550_suit_sps_elv)
+asihmr_rcp8550_suit_sps_elv <- round(asihmr_rcp8550_suit_sps_elv)
+asihmr_rcp8550_suit_sps_elv_df <- table(asihmr_rcp8550_suit_sps_elv) %>% as.data.frame()
+# asihmr_rcp8550_suit_sps_elv_df<- as.data.frame(asihmr_rcp8550_suit_sps_elv_df)
+# View(asihmr_rcp8550_suit_sps_elv_df)
+
+```
+## Year 2070
+```{r}
+###asihmr_rcp8570_suit
+asihmr_rcp8570_suit_sps <- asihmr_rcp8570_suit
+# plot(asihmr_rcp8570_suit)
+asihmr_rcp8570_suit_sps
+asihmr_rcp8570_suit_sps_xy <- as.data.frame(asihmr_rcp8570_suit_sps, xy = T) %>% drop_na()
+# asihmr_rcp8570_suit_sps_xy<- na.omit(asihmr_rcp8570_suit_sps_xy)
+#View(asihmr_rcp8570_suit_sps_xy)
+asihmr_rcp8570_suit_pt <- SpatialPoints(asihmr_rcp8570_suit_sps_xy[1:2], proj4string = crs(asihmr_rcp8570_suit_sps))
+# plot(asihmr_rcp8570_suit_pt)
+asihmr_rcp8570_suit_sps_elv <- raster::extract(eleva, asihmr_rcp8570_suit_pt)
+#View(asihmr_rcp8570_suit_sps_elv)
+hist(asihmr_rcp8570_suit_sps_elv)
+asihmr_rcp8570_suit_sps_elv <- round(asihmr_rcp8570_suit_sps_elv)
+asihmr_rcp8570_suit_sps_elv_df <- table(asihmr_rcp8570_suit_sps_elv) %>% as.data.frame()
+
+
+```
+
+## Summary Statistic for the elevation gradient of Asia HMR
+### New Container dataframe for scenarios
+```{r}
+asihmr_baseline_df1 <-   data.frame(Scenarios = "Baseline", elevation = asihmr_bs_suit_sps_elv_df$asihmr_bs_suit_sps_elv, Pixels= asihmr_bs_suit_sps_elv_df$Freq)
+asihmr_rcp45_2030_df1 <- data.frame(Scenarios = "RCP4.5 2030", elevation = asihmr_rcp4530_suit_sps_elv_df$asihmr_rcp4530_suit_sps_elv, Pixels = asihmr_rcp4530_suit_sps_elv_df$Freq)
+
+asihmr_rcp45_2050_df1 <- data.frame(Scenarios = "RCP4.5 2050", elevation = asihmr_rcp4550_suit_sps_elv_df$asihmr_rcp4550_suit_sps_elv, Pixels=asihmr_rcp4550_suit_sps_elv_df$Freq)
+
+asihmr_rcp45_2070_df1 <- data.frame(Scenarios = "RCP4.5 2070", elevation = asihmr_rcp4570_suit_sps_elv_df$asihmr_rcp4570_suit_sps_elv, Pixels=asihmr_rcp4570_suit_sps_elv_df$Freq)
+asihmr_rcp85_2030_df1 <- data.frame(Scenarios = "RCP8.5 2030", elevation = asihmr_rcp8530_suit_sps_elv_df$asihmr_rcp8530_suit_sps_elv, Pixels=asihmr_rcp8530_suit_sps_elv_df$Freq)
+
+asihmr_rcp85_2050_df1 <- data.frame(Scenarios = "RCP8.5 2050", elevation = asihmr_rcp8550_suit_sps_elv_df$asihmr_rcp8550_suit_sps_elv, Pixels=asihmr_rcp8550_suit_sps_elv_df$Freq)
+
+asihmr_rcp85_2070_df1 <- data.frame(Scenarios = "RCP8.5 2070", elevation = asihmr_rcp8570_suit_sps_elv_df$asihmr_rcp8570_suit_sps_elv, Pixels= asihmr_rcp8570_suit_sps_elv_df$Freq)
+
+asihmr_dengue_rbind <- rbind(asihmr_baseline_df1, asihmr_rcp45_2030_df1, asihmr_rcp45_2050_df1,asihmr_rcp45_2070_df1, asihmr_rcp85_2030_df1, asihmr_rcp85_2050_df1, asihmr_rcp85_2070_df1 ) 
+head(asihmr_dengue_rbind)
+str(asihmr_dengue_rbind) # note the elevation values are stored as factor. This is an error, therefore, we conver the factors to numeric
+
+#conver elevation in factor to character to numeric
+asihmr_dengue_rbind$elevation <- as.numeric(as.character(asihmr_dengue_rbind$elevation))
+
+#Summary statistics
+asihmr_ele_summary <- do.call(cbind, tapply(asihmr_dengue_rbind$elevation, asihmr_dengue_rbind$Scenarios, summary)) # using do call one can combine list of the summary to columns combine
+asihmr_ele_summary_t <- as.data.frame(t(as.matrix(asihmr_ele_summary))) #make a transpose: change the columns to row and rows to columns
+asihmr_ele_summary_t
+asihmr_ele_summary
+getwd()
+write.csv(asihmr_ele_summary_t, "C:/thesisR/R_new/HMRs/Asia_HMR/asiHMR_elevation_summary.csv")
+```
+### Sorting the elevation values of suitable areas into different frequency.
+
+```{r}
+asihmr_dengue_rbind2 <- asihmr_dengue_rbind
+asihmr_dengue_rbind2 <- sort_def2(asihmr_dengue_rbind2)
+tail(asihmr_dengue_rbind2,100)
+head(asihmr_dengue_rbind2)
+
+asihmr_dengue_rbind2$sorting <-factor(asihmr_dengue_rbind2$sorting, levels = c("<0","0-199","200-399", "400 -599", "600-799","800-999", "1000-1199", "1200-1399","1400-1599", "1600-1799","1800-1999","2000-2199","2200-2399", "2400-2599", "2600-2799",  "2800-2999", "3000-3199", "3200-3399", "3400-3599","3600-3799","3800-3999","4000 - 4199 ","4200-4399", "> 4400"))
+
+```
+
+### Generating the scenario plots for number of pixel in each elevation gradient.
+```{r}
+# to know the number of pages require
+ggplot(data = asihmr_dengue_rbind2, aes(x=sorting, y = Pixels))+
+  geom_bar(stat = 'identity', fill = "#fdb924", position = position_dodge(preserve = "total"))+ 
+  facet_wrap_paginate(~Scenarios, scales="free_y", nrow = 1, ncol = 1)+
+  scale_y_continuous(breaks = pretty(asihmr_dengue_rbind$Pixels, n=10))+
+  labs(x="Elevation range [m ]", y = 'No. of Pixels',
+       title = "Altitudinal distribution of areas suitable for dengue transmission",
+       subtitle = "Asia(HMR) ")+
+  theme(strip.text=element_text(size = 30)) -> p.elegrt
+
+no_p.elegrt <- n_pages(p.elegrt)
+no_p.elegrt 
+#save each barplot to as individual page  to a pdf
+getwd()
+pdf("C:/thesisR/R_new/HMRs/Asia_HMR/AsiHMR_pAll.pdf") 
+# loop over the facet plots
+for(i in 1:no_p.elegrt){
+  ggplot(data = asihmr_dengue_rbind2, aes(x=sorting, y = Pixels))+
+    geom_bar(stat = 'identity', fill = "#fdb924", position = position_dodge(preserve = "total"), width = .2)+ 
+    facet_wrap_paginate(~Scenarios, scales="free_y", nrow = 1, ncol = 1, page = i)+
+    scale_y_continuous(breaks = pretty(asihmr_dengue_rbind$Pixels, n=10))+
+    labs(x="Elevation range [m ]", y = 'No. of Pixels',
+         title = "Altitudinal distribution of areas suitable for dengue transmission",
+         subtitle = "Asia(HMR) ")+
+    theme_minimal()+
+    theme(strip.text=element_text(size = 30), axis.text.x = element_text(angle = 45)) -> p.elegrt
+  print(p.elegrt)
+}
+dev.off()
+
+```
+
+

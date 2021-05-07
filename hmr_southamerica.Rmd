@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-# Data visualization: Altitudinal shif in climatically suitable ar --------
+# Data visualization: Altitudinal shift of climatically suitable area at risk of dengue transmission in the high mountain regions.--------
 ### Prepared: Ridwan Adeyemi Shittu
 #### Master Thesis
 
@@ -36,7 +36,7 @@ load("C:/thesisR/R_new/Cleaned_model_Ouputs_analysis.RData")
 ```
 
 
-```{r }
+```{r , echo=FALSE}
 #area for the shapefiles SAmerica(HMR)
 soa_hmr_a <- areaPolygon(soa_hmr)
 print(soa_hmr_a/1000000)
